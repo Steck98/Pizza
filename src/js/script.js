@@ -72,57 +72,47 @@
       
     },
   };
+
   class AmountWidget{
     constructor(element) {
       const thisWidget= this;
       thisWidget.getElements(element);
       thisWidget.setValue(thisWidget.input.value);
       thisWidget.initActions();
-      
-
     }
     getElements(element){
       const thisWidget = this;
-    
       thisWidget.element = element;
       thisWidget.input = thisWidget.element.querySelector(select.widgets.amount.input);
       thisWidget.linkDecrease = thisWidget.element.querySelector(select.widgets.amount.linkDecrease);
       thisWidget.linkIncrease = thisWidget.element.querySelector(select.widgets.amount.linkIncrease);
-      
     }
     setValue(value){
-      
       const thisWidget=this;
       const newValue = parseInt(value); 
-        
-      if(thisWidget.value !== newValue && !isNaN(newValue) && settings.amountWidget.defaultMin <= newValue  && settings.amountWidget.defaultMax >= newValue) {
-        
-        thisWidget.value = newValue;
-        
-      }else{
+      if(thisWidget.value !== newValue 
+        && !isNaN(newValue) 
+        && settings.amountWidget.defaultMin <= newValue  
+        && settings.amountWidget.defaultMax >= newValue)
+        {thisWidget.value = newValue;
+        }else{
         thisWidget.value = 1;
-        
       }
-      
       thisWidget.input.value=thisWidget.value;
       thisWidget.announce();
     }
     initActions(){
       const thisWidget=this;
-
       thisWidget.input.addEventListener('change', function(){
         thisWidget.setValue(thisWidget.input.value);
       });
-      
       thisWidget.linkDecrease.addEventListener('click',function(event){
         event.preventDefault();
         thisWidget.setValue(thisWidget.value -1);
       });
-      
       thisWidget.linkIncrease.addEventListener('click',function(event){
         event.preventDefault();
         thisWidget.setValue(thisWidget.value + 1);
-        
       });
     }
     announce(){
@@ -146,14 +136,9 @@
     renderInMenu(){
       const thisProduct=this;
       const generatedHTML= templates.menuProduct(thisProduct.data);
-      
       thisProduct.element= utils.createDOMFromHTML(generatedHTML);
-      
       const menuContainer= document.querySelector(select.containerOf.menu);
       menuContainer.appendChild(thisProduct.element);
-      
-
-
     }
     getElements(){
       const thisProduct = this;
@@ -167,18 +152,15 @@
     }
     initAccordion() {
       const thisProduct = this;
-      
       thisProduct.accordionTrigger.addEventListener('click', function(event) {
         event.preventDefault();
         const activeProduct = document.querySelector(
           select.all.menuProductsActive
         );
-     
         if (activeProduct !== thisProduct.element && activeProduct !== null) {
           activeProduct.classList.remove('active');
         }
         thisProduct.element.classList.toggle('active');
-        
       });
     }
     initOrderForm(){
@@ -199,7 +181,6 @@
     }
     processOrder() {
       const thisProduct = this;
-
       const formData = utils.serializeFormToObject(thisProduct.form);
       let price = thisProduct.data.price; 
       for(let paramId in thisProduct.data.params) {
@@ -208,16 +189,13 @@
           const option = param.options[optionId];
           if(formData[paramId] && formData[paramId].includes(optionId)) {
             if(option.default !== true) {
-              price = option.price + price;
-              
+              price = option.price + price; 
             }
           } else {
             if(option.default == true) {
               price = price - option.price;
-              
             }
           }
-          
           const optionImage = thisProduct.imageWrapper.querySelector('.'+ paramId + '-'+ optionId);
           if(optionImage){
             if (formData[paramId] && formData[paramId].includes(optionId)) {
@@ -237,10 +215,7 @@
       thisProduct.amountWidgetElem.addEventListener('updated', function (){
         thisProduct.processOrder();
       });
-    }
-  
+    } 
   }
-
-
   app.init();
 }
