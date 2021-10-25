@@ -69,18 +69,54 @@
     cart: {
       defaultDeliveryFee: 20,
     },
+    db: {
+      url: '//localhost:3131',
+      products: 'products',
+      orders: 'orders',
+    },
   };
   const templates = {
     menuProduct: Handlebars.compile(document.querySelector(select.templateOf.menuProduct).innerHTML),
     cartProduct: Handlebars.compile(document.querySelector(select.templateOf.cartProduct).innerHTML),
   };
+  
   class Cart{
     constructor(element){
       const thisCart= this;
       thisCart.products=[];
       thisCart.getElements(element);
       thisCart.initActions();
+        
+    }
+    sendOrder(){
+      const thisCart=this;
+      const url = settings.db.url + '/' + settings.db.orders;
+      const payload = {}; 
+      payload.address = thisCart.dom.address.value; 
+      payload.phone = thisCart.dom.phone.value;
+      payload.totalPrice = thisCart.dom.totalPrice.innerHTML;
+      payload.subtotalPrice = thisCart.dom.subtotalPrice.innerHTML; 
+      payload.totalNumber = thisCart.dom.totalNumber.innerHTML; 
+      payload.deliveryFee = thisCart.dom.deliveryFee.innerHTML; 
+      payload.products = []; 
       
+      for(let prod of thisCart.products) {
+        payload.products.push(prod.getData());
+      }
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      };
+      
+      fetch(url, options)
+        .then(function(response){
+          return response.json();
+        }).then(function(parsedResponse){
+          console.log('parsedResponse:',parsedResponse);
+        });
     }
     add(menuProduct){
       const thisCart=this;
@@ -101,6 +137,10 @@
       thisCart.dom.subtotalPrice=element.querySelector(select.cart.subtotalPrice);
       thisCart.dom.totalNumber=element.querySelector(select.cart.totalNumber);
       thisCart.dom.totalPrice=element.querySelectorAll(select.cart.totalPrice);
+      thisCart.dom.form= element.querySelector(select.cart.form);
+      thisCart.dom.phone=element.querySelector(select.cart.phone);
+      thisCart.dom.address=element.querySelector(select.cart.address);
+      
     }
     initActions(){
       const thisCart = this;
@@ -113,6 +153,10 @@
         thisCart.dom.productList.addEventListener('remove',function(event){
           thisCart.remove(event.detail.cartProduct);
         });
+        thisCart.dom.form.addEventListener('submit',function(event){
+          event.preventDefault();
+          thisCart.sendOrder();
+        });
       });
     }
     remove(cartProduct){
@@ -122,7 +166,7 @@
       thisCart.products.splice(indexOfProduct, 1);
       
         
-        thisCart.update();
+      thisCart.update();
     }
     update(){
       const thisCart=this;
@@ -130,12 +174,13 @@
       thisCart.totalNumber=0;
       thisCart.subtotalPrice=0;
       thisCart.totalPrice=0;
-      if(thisCart.totalNumber === 0){
-        thisCart.deliveryFee = 0;
-      }
+      
       for(let product of thisCart.products){
         thisCart.totalNumber += product.amount;
         thisCart.subtotalPrice += product.price;
+      }
+      if(thisCart.totalNumber === 0){
+        thisCart.deliveryFee = 0;
       }
       thisCart.totalPrice = thisCart.subtotalPrice + thisCart.deliveryFee;
       for (let price of thisCart.dom.totalPrice) {
@@ -173,6 +218,18 @@
       thisCartProduct.dom.remove=element.querySelector(select.cartProduct.remove);
       
 
+    }
+    getData() { 
+      const thisCartProduct = this;
+      const productData = {
+        id: thisCartProduct.id,
+        amount: thisCartProduct.amount,
+        name: thisCartProduct.name,
+        price: thisCartProduct.price,
+        priceSingle: thisCartProduct.priceSingle,
+        params: thisCartProduct.params,
+      };
+      return productData;
     }
     initAmountWidget(){
       const thisCartProduct=this;
@@ -212,7 +269,7 @@
       const thisApp=this;
       
       for(let productData in thisApp.data.products){
-        new Product(productData, thisApp.data.products[productData]);
+        new Product(thisApp.data.products[productData].id, thisApp.data.products[productData]);
       }
       
       
@@ -220,12 +277,23 @@
     initData: function(){
       
       const thisApp = this;
-      thisApp.data  = dataSource;
+      thisApp.data = {};
+      const url = settings.db.url + '/' + settings.db.products;
+      fetch(url)
+        .then(function(rawResponse){
+          return rawResponse.json();
+        })
+        .then(function(parsedResponse){
+          console.log('parsed Response:', parsedResponse);
+          thisApp.data.products= parsedResponse;
+          thisApp.initMenu();
+        });
+         
+      console.log('This app.data:', JSON.stringify(thisApp.data));
     },
     init: function(){
       const thisApp = this;
       thisApp.initData();
-      thisApp.initMenu();
       thisApp.initCart();
       
     },
@@ -239,6 +307,7 @@
       
       
     }
+    
   };
 
   class AmountWidget{
